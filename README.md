@@ -58,12 +58,12 @@ int main(void)
 {
 	STLSERIES handle;
 
-	if (!stlseries_open(&handle)) {
+	if (stlseries_open(&handle)) {
 		fprintf(stderr, "Unable to open SteelSeries keyboard.\n");
 		exit(EXIT_FAILURE);
 	}
 
-	if (!stlseries_setcolor_normal(handle, STLSERIES_ZONE_CENTER,
+	if (stlseries_setcolor_normal(handle, STLSERIES_ZONE_CENTER,
 			STLSERIES_COLOR_RED, STLSERIES_SATURATION_HIGH)) {
 		fprint(stderr, "Unable to set color.\n");
 		exit(EXIT_FAILURE);
