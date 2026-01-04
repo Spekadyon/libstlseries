@@ -6,35 +6,36 @@ steelseries keyboard LED color configuration
 ## Description
 
 Plain C re-implementation of *msi-keyboard* and *stseries-light*. Used to set
-the backlight color of steelseries keyboards found on MSI notebooks.
+the backlight color of steelseries keyboards found on some MSI notebooks (at
+least GE72 Apache).
+The keyboard is identified by `lsusb` as follows:
+```
+ID 1770:ff00 MSI steel series rgb keyboard
+```
 
 
 ## References
 
 * [msi-keyboard](https://github.com/wearefractal/msi-keyboard)
 * [stseries-light](https://github.com/blackwolf-70/stseries-light)
-* [HIDAPI CMake find module](https://github.com/rpavlik/cmake-modules)
 
 
 ## Dependencies
 
-* [HID API](http://www.signal11.us/oss/hidapi/)
-* CMake (build)
+* [HIDAPI](https://github.com/libusb/hidapi)
+* meson (build)
 
 
 ## Build
 
 To build the library on Linux:
 
-1. mkdir build && cd build
-2. cmake
-3. make
-4. **(as root)** make install
-5. **(optional)** install `udev/99-stlseries.rules` in /etc/udev/rules.d (grant
+1. clone this repository, cd to it (i.e. `git clone https://github.com/Spekadyon/libstlseries.git && cd libstlseries`)
+1. configure the build: `meson setup build/ --prefix=/usr/local/ --buildtype=release` (adjust prefix as needed)
+1. compile the project: `meson compile -C build/`
+1. install the library, header and pkgconfig file: `meson install -C build/`
+1. **(optional)** install `udev/99-stlseries.rules` in /etc/udev/rules.d (grant
    access to the keyboard to users in the *plugdev* group)
-
-A simple, quick & dirty GUI is available in stlseries_gui/. Qt 4 or 5 is
-required to build it (just type `qmake` and `make`).
 
 
 ## Usage
@@ -43,13 +44,10 @@ required to build it (just type `qmake` and `make`).
 2. Change the mode and/or color using stlseries_setcolor\*()
 3. Close the device with stlseries_close()
 
-Except stlseries_close() which returns nothing, all functions return 0 on
-success, and a positive value on error.
-
 
 ## Example
 
-```C
+```c
 #include <stdio.h>
 #include <stdlib.h>
 #include <stlseries.h>
@@ -57,14 +55,17 @@ success, and a positive value on error.
 int main(void)
 {
 	STLSERIES handle;
+    enum StlseriesStatus status;
 
-	if (stlseries_open(&handle)) {
-		fprintf(stderr, "Unable to open SteelSeries keyboard.\n");
+	handle = stlseries_open(&status);
+
+    if (handle == NULL) {
+		fprintf(stderr, "Unable to open SteelSeries keyboard: %d.\n", (int)status);
 		exit(EXIT_FAILURE);
 	}
 
 	if (stlseries_setcolor_normal(handle, STLSERIES_ZONE_CENTER,
-			STLSERIES_COLOR_RED, STLSERIES_SATURATION_HIGH)) {
+			STLSERIES_COLOR_RED, STLSERIES_SATURATION_HIGH) != STLSERIES_OK) {
 		fprint(stderr, "Unable to set color.\n");
 		exit(EXIT_FAILURE);
 	}
@@ -79,4 +80,5 @@ int main(void)
 
 ## TODO
 * command line interface
-
+* documentation
+* allow to disable logging
