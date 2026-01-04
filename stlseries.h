@@ -93,7 +93,7 @@ enum StlseriesMode {
  */
 
 STLSERIES stlseries_open(enum StlseriesStatus *status);
-void stlseries_close(STLSERIES handle);
+enum StlseriesStatus stlseries_close(STLSERIES handle);
 enum StlseriesStatus stlseries_setmode(STLSERIES handle, enum StlseriesMode mode);
 enum StlseriesStatus stlseries_setcolor(STLSERIES handle, enum StlseriesZone zone, enum StlseriesColor color, enum StlseriesSaturation saturation);
 enum StlseriesStatus stlseries_setcolor_normal(STLSERIES handle, enum StlseriesZone zone, enum StlseriesColor color, enum StlseriesSaturation saturation);

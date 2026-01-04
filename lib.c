@@ -165,13 +165,19 @@ STLSERIES stlseries_open(enum StlseriesStatus *status)
  * Close the device
  */
 
-void stlseries_close(STLSERIES handle)
+enum StlseriesStatus stlseries_close(STLSERIES handle)
 {
-	hid_close(handle);
+	int ret;
 
-	if (hid_exit() == -1) {
+	hid_close(handle);
+	ret = hid_exit();
+
+	if (ret == -1) {
 		fprintf(stderr, "Unable to close hidapi!\n");
+		return STLSERIES_EINIT;
 	}
+
+	return STLSERIES_OK;
 }
 
 
