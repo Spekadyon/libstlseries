@@ -22,7 +22,7 @@
 
 #include <hidapi/hidapi.h>
 
-#ifdef __cplusplus 
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -38,54 +38,65 @@ typedef hid_device* STLSERIES;
 
 /* Error numbers */
 
-#define STLSERIES_EINIT		1	/* Initialisation routines failure */
-#define STLSERIES_EOPEN		2	/* Unable to open HID device */
-#define STLSERIES_EINVAL	3	/* Invalid function parameter */
-#define STLSERIES_EIO		4	/* Input/Output error */
+enum StlseriesStatus {
+	STLSERIES_OK = 0,       /* No error */
+	STLSERIES_EINIT,        /* Initialisation routines failure */
+	STLSERIES_EOPEN,        /* Unable to open HID device */
+	STLSERIES_EINVAL,       /* Invalid function parameter */
+	STLSERIES_EIO           /* Input/Output error */
+};
 
 /* LED colors */
 
-#define STLSERIES_COLOR_NONE	0U
-#define STLSERIES_COLOR_RED	1U
-#define STLSERIES_COLOR_ORANGE	2U
-#define STLSERIES_COLOR_YELLOW	3U
-#define STLSERIES_COLOR_GREEN	4U
-#define STLSERIES_COLOR_SKY	5U
-#define STLSERIES_COLOR_BLUE	6U
-#define STLSERIES_COLOR_PURPLE	7U
-#define STLSERIES_COLOR_WHITE	8U
+enum StlseriesColor {
+	STLSERIES_COLOR_NONE    = 0U,
+	STLSERIES_COLOR_RED     = 1U,
+	STLSERIES_COLOR_ORANGE  = 2U,
+	STLSERIES_COLOR_YELLOW  = 3U,
+	STLSERIES_COLOR_GREEN   = 4U,
+	STLSERIES_COLOR_SKY     = 5U,
+	STLSERIES_COLOR_BLUE    = 6U,
+	STLSERIES_COLOR_PURPLE  = 7U,
+	STLSERIES_COLOR_WHITE   = 8U
+};
 
 /* Color saturation */
 
-#define STLSERIES_SATURATION_HIGH	0U
-#define STLSERIES_SATURATION_MED	1U
-#define STLSERIES_SATURATION_LOW	2U
-#define STLSERIES_SATURATION_NULL	3U
+enum StlseriesSaturation {
+	STLSERIES_SATURATION_HIGH   = 0U,
+	STLSERIES_SATURATION_MED    = 1U,
+	STLSERIES_SATURATION_LOW    = 2U,
+	STLSERIES_SATURATION_NULL   = 3U
+};
 
 /* Keyboard zone */
 
-#define STLSERIES_ZONE_LEFT	1U
-#define STLSERIES_ZONE_CENTER	2U
-#define STLSERIES_ZONE_RIGHT	3U
+enum StlseriesZone {
+	STLSERIES_ZONE_LEFT     = 1U,
+	STLSERIES_ZONE_CENTER   = 2U,
+	STLSERIES_ZONE_RIGHT    = 3U,
+};
 
 /* Keyboard mode */
 
-#define STLSERIES_MODE_NORMAL	1U
-#define STLSERIES_MODE_GAMING	2U
-#define STLSERIES_MODE_BREATHE	3U
-#define STLSERIES_MODE_DEMO	4U
-#define STLSERIES_MODE_WAVE	5U
+enum StlseriesMode {
+	STLSERIES_MODE_NORMAL   = 1U,
+	STLSERIES_MODE_GAMING   = 2U,
+	STLSERIES_MODE_BREATHE  = 3U,
+	STLSERIES_MODE_DEMO     = 4U,
+	STLSERIES_MODE_WAVE     = 5U,
+};
 
 
 /*
  * Functions
  */
 
-int stlseries_open(STLSERIES *handle);
-void stlseries_close(void);
-int stlseries_setmode(STLSERIES handle, unsigned char mode);
-int stlseries_setcolor(STLSERIES handle, unsigned char zone, unsigned char color, unsigned char saturation);
-int stlseries_setcolor_normal(STLSERIES handle, unsigned char zone, unsigned char color, unsigned char saturation);
+STLSERIES stlseries_open(enum StlseriesStatus *status);
+void stlseries_close(STLSERIES handle);
+enum StlseriesStatus stlseries_setmode(STLSERIES handle, enum StlseriesMode mode);
+enum StlseriesStatus stlseries_setcolor(STLSERIES handle, enum StlseriesZone zone, enum StlseriesColor color, enum StlseriesSaturation saturation);
+enum StlseriesStatus stlseries_setcolor_normal(STLSERIES handle, enum StlseriesZone zone, enum StlseriesColor color, enum StlseriesSaturation saturation);
 
 #ifdef __cplusplus
 }

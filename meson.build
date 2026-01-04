@@ -10,7 +10,7 @@ src = ['lib.c']
 headers = ['stlseries.h']
 
 lib = library('stlseries', src,
-  version: '0.0.1',
+  version: '0.0.2',
   soversion: '0',
   dependencies: [ hidapi_dep ],
   install: true)

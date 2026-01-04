@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 - Geoffrey Brun <geoffrey+git@spekadyon.org>
+ * Copyright 2015-2026 - Geoffrey Brun <geoffrey+git@spekadyon.org>
  *
  * This file is part of libstlseries.
  *
@@ -38,7 +38,7 @@
  */
 
 /* Colors names */
-const char *stlseries_colors[] = {
+static char const *stlseries_colors[] = {
 	"none",
 	"red",
 	"orange",
@@ -52,7 +52,7 @@ const char *stlseries_colors[] = {
 };
 
 /* Modes */
-const char *stlseries_modes[] = {
+static char const *stlseries_modes[] = {
 	NULL,
 	"normal",
 	"gaming",
@@ -63,7 +63,7 @@ const char *stlseries_modes[] = {
 };
 
 /* Zones */
-const char *stlseries_zones[] = {
+static char const *stlseries_zones[] = {
 	NULL,
 	"left",
 	"center",
@@ -72,7 +72,7 @@ const char *stlseries_zones[] = {
 };
 
 /* Color saturation */
-const char *stlseries_saturation[] = {
+static char const *stlseries_saturation[] = {
 	"high",
 	"medium",
 	"low",
@@ -81,43 +81,47 @@ const char *stlseries_saturation[] = {
 };
 
 /* Default message (invalid) */
-const char stlseries_msg_inval[] = "invalid";
+static char const stlseries_msg_inval[] = "invalid";
 
 
 /*
  * Constant to name conversion functions
  */
 
-const char *stlseries_strcolor(unsigned char color)
+static char const *stlseries_strcolor(enum StlseriesColor color)
 {
-	if (color > STLSERIES_COLOR_WHITE)
+	if (color > STLSERIES_COLOR_WHITE) {
 		return stlseries_msg_inval;
-	else
+	} else {
 		return stlseries_colors[color];
+	}
 }
 
-const char *stlseries_strmode(unsigned char mode)
+static char const *stlseries_strmode(enum StlseriesMode mode)
 {
-	if ( (mode == 0) || (mode > STLSERIES_MODE_WAVE) )
+	if ( (mode <= 0) || (mode > STLSERIES_MODE_WAVE) ) {
 		return stlseries_msg_inval;
-	else
+	} else {
 		return stlseries_modes[mode];
+	}
 }
 
-const char *stlseries_strzone(unsigned char zone)
+static char const *stlseries_strzone(enum StlseriesZone zone)
 {
-	if ( (zone == 0) || (zone > STLSERIES_ZONE_RIGHT) )
+	if ( (zone <= 0) || (zone > STLSERIES_ZONE_RIGHT) ) {
 		return stlseries_msg_inval;
-	else
+	} else {
 		return stlseries_zones[zone];
+	}
 }
 
-const char *stlseries_strsaturation(unsigned char saturation)
+static char const *stlseries_strsaturation(enum StlseriesSaturation saturation)
 {
-	if (saturation > STLSERIES_SATURATION_NULL)
+	if (saturation < 0 || saturation > STLSERIES_SATURATION_NULL) {
 		return stlseries_msg_inval;
-	else
+	} else {
 		return stlseries_saturation[saturation];
+	}
 }
 
 
@@ -125,31 +129,35 @@ const char *stlseries_strsaturation(unsigned char saturation)
  * Device initialization
  */
 
-int stlseries_open(STLSERIES *handle)
+STLSERIES stlseries_open(enum StlseriesStatus *status)
 {
 	hid_device *hidp;
 
-	if (handle == NULL)
-		return STLSERIES_EINVAL;
-
 	if (hid_init() == -1) {
-		fprintf(stderr, "Unable to initialize hid subsystem.\n");
-		return STLSERIES_EINIT;
+		fprintf(stderr, "Unable to initialize hid subsystem: %ls.\n", hid_error(NULL));
+		if (status) {
+			*status = STLSERIES_EINIT;
+		}
+		return NULL;
 	}
 
 	hidp = hid_open(VENDORID, PRODUCTID, NULL);
 	if (hidp == NULL) {
-		fprintf(stderr, "Unable to open USB device %04X:%04X. You may try to check the permissions of "
-				"this device. ", VENDORID, PRODUCTID);
+		fprintf(stderr, "Unable to open USB device %04X:%04X: %ls.\n", VENDORID, PRODUCTID, hid_error(NULL));
 #ifdef _HIDAPI_LIBUSB_
 		fprintf(stderr, "Check /dev/bus/usb/...\n");
 #else
 		fprintf(stderr, "Check /dev/hidrawXX\n");
 #endif
-		return STLSERIES_EOPEN;
+		if (status) {
+			*status = STLSERIES_EOPEN;
+		}
+		return NULL;
 	}
-	*handle = hidp;
-	return 0;
+	if (status) {
+		*status = STLSERIES_OK;
+	}
+	return hidp;
 }
 
 
@@ -157,8 +165,10 @@ int stlseries_open(STLSERIES *handle)
  * Close the device
  */
 
-void stlseries_close(void)
+void stlseries_close(STLSERIES handle)
 {
+	hid_close(handle);
+
 	if (hid_exit() == -1) {
 		fprintf(stderr, "Unable to close hidapi!\n");
 	}
@@ -169,7 +179,7 @@ void stlseries_close(void)
  * Set keyboard LED mode
  */
 
-int stlseries_setmode(STLSERIES handle, unsigned char mode)
+enum StlseriesStatus stlseries_setmode(STLSERIES handle, enum StlseriesMode mode)
 {
 	unsigned char buf[8] = {1, 2, 65, 0, 0, 0, 0, 236};
 
@@ -179,18 +189,19 @@ int stlseries_setmode(STLSERIES handle, unsigned char mode)
 		return STLSERIES_EINVAL;
 	}
 	if (mode == 0 || mode > STLSERIES_MODE_WAVE) {
-		fprintf(stderr, "Invalid mode: %hhu\n", mode);
+		fprintf(stderr, "Invalid mode: %d\n", (int)mode);
 		return STLSERIES_EINVAL;
 	}
 
 	buf[3] = mode;
 
 	if (hid_send_feature_report(handle, buf, 8) == -1) {
-		fprintf(stderr, "Unable to change mode (%s)\n", stlseries_strmode(mode));
+		fprintf(stderr, "Unable to change mode (%s): %ls.\n",
+			stlseries_strmode(mode), hid_error(handle));
 		return STLSERIES_EIO;
 	}
 
-	return 0;
+	return STLSERIES_OK;
 }
 
 
@@ -198,7 +209,7 @@ int stlseries_setmode(STLSERIES handle, unsigned char mode)
  * Set keyboard color.
  */
 
-int stlseries_setcolor(STLSERIES handle, unsigned char zone, unsigned char color, unsigned char saturation)
+enum StlseriesStatus stlseries_setcolor(STLSERIES handle, enum StlseriesZone zone, enum StlseriesColor color, enum StlseriesSaturation saturation)
 {
 	unsigned char buf[8] = {1, 2, 66, 0, 0, 0, 0, 236};
 
@@ -207,16 +218,16 @@ int stlseries_setcolor(STLSERIES handle, unsigned char zone, unsigned char color
 		fprintf(stderr, "Invalid pointer (null)\n");
 		return STLSERIES_EINVAL;
 	}
-	if ( (zone == 0) || (zone > STLSERIES_ZONE_RIGHT) ) {
-		fprintf(stderr, "Invalid zone: %hhu\n", zone);
+	if ( (zone <= 0) || (zone > STLSERIES_ZONE_RIGHT) ) {
+		fprintf(stderr, "Invalid zone: %d\n", (int)zone);
 		return STLSERIES_EINVAL;
 	}
-	if (color > STLSERIES_COLOR_WHITE) {
-		fprintf(stderr, "Invalid color: %hhu\n", color);
+	if (color < 0 || color > STLSERIES_COLOR_WHITE) {
+		fprintf(stderr, "Invalid color: %d\n", (int)color);
 		return STLSERIES_EINVAL;
 	}
-	if (saturation > STLSERIES_SATURATION_NULL) {
-		fprintf(stderr, "Invalid color saturation value: %hhu\n", saturation);
+	if (saturation < 0 || saturation > STLSERIES_SATURATION_NULL) {
+		fprintf(stderr, "Invalid color saturation value: %d\n", (int)saturation);
 		return STLSERIES_EINVAL;
 	}
 
@@ -227,8 +238,9 @@ int stlseries_setcolor(STLSERIES handle, unsigned char zone, unsigned char color
 
 	/* Sending message */
 	if (hid_send_feature_report(handle, buf, 8) == -1) {
-		fprintf(stderr, "Unable to set (%s, %s, %s)\n", stlseries_strzone(zone),
-				stlseries_strcolor(color), stlseries_strsaturation(saturation));
+		fprintf(stderr, "Unable to set (%s, %s, %s): %ls.\n", stlseries_strzone(zone),
+			stlseries_strcolor(color), stlseries_strsaturation(saturation),
+			hid_error(handle));
 		return STLSERIES_EIO;
 	}
 
@@ -240,18 +252,15 @@ int stlseries_setcolor(STLSERIES handle, unsigned char zone, unsigned char color
  * Set keyboard color in "normal" illumination mode.
  */
 
-int stlseries_setcolor_normal(STLSERIES handle, unsigned char zone, unsigned char color, unsigned char saturation)
+enum StlseriesStatus stlseries_setcolor_normal(STLSERIES handle, enum StlseriesZone zone, enum StlseriesColor color, enum StlseriesSaturation saturation)
 {
-	int ret;
+	enum StlseriesStatus ret;
 
 	ret = stlseries_setmode(handle, STLSERIES_MODE_NORMAL);
-	if (ret)
+	if (ret != STLSERIES_OK) {
 		return ret;
+	}
 
-	ret = stlseries_setcolor(handle, zone, color, saturation);
-	if (ret)
-		return ret;
-
-	return 0;
+	return stlseries_setcolor(handle, zone, color, saturation);
 }
 
