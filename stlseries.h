@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 - Geoffrey Brun <geoffrey+git@spekadyon.org>
+ * Copyright 2015-2026 - Geoffrey Brun <geoffrey+git@spekadyon.org>
  *
  * This file is part of libstlseries.
  *
